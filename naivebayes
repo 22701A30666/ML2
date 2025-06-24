@@ -1,0 +1,99 @@
+import random
+import math
+
+def loadDataset():
+    dataset = [
+        [1, 1, 1, 0],
+        [1, 0, 0, 0],
+        [0, 1, 1, 1],
+        [0, 0, 0, 0],
+        [1, 1, 1, 1],
+        [0, 0, 0, 1]
+    ]
+    return dataset
+
+def splitDataset(dataset, splitRatio):
+    trainSize = int(len(dataset) * splitRatio)
+    trainSet = []
+    copy = list(dataset)
+    while len(trainSet) < trainSize:
+        index = random.randrange(len(copy))
+        trainSet.append(copy.pop(index))
+    return [trainSet, copy]
+
+def separateByClass(dataset):
+    separated = {}
+    for vector in dataset:
+        classValue = vector[-1]
+        if classValue not in separated:
+            separated[classValue] = []
+        separated[classValue].append(vector)
+    return separated
+
+def mean(numbers):
+    return sum(numbers) / float(len(numbers))
+
+def stdev(numbers):
+    if len(numbers) <= 1:
+        return 0.0
+    avg = mean(numbers)
+    variance = sum((x - avg) ** 2 for x in numbers) / (len(numbers) - 1)
+    return math.sqrt(variance)
+
+def summarize(dataset):
+    summaries = [(mean(attribute), stdev(attribute)) for attribute in zip(*dataset)]
+    del summaries[-1]
+    return summaries
+
+def summarizeByClass(dataset):
+    separated = separateByClass(dataset)
+    summaries = {}
+    for classValue, instances in separated.items():
+        summaries[classValue] = summarize(instances)
+    return summaries
+
+def calculateProbability(x, mean, stdev):
+    if stdev == 0:
+        return 1.0 if x == mean else 0.0
+    exponent = math.exp(-((x - mean) ** 2) / (2 * (stdev ** 2)))
+    return (1 / (math.sqrt(2 * math.pi) * stdev)) * exponent
+
+def calculateClassProbabilities(summaries, inputVector):
+    probabilities = {}
+    for classValue, classSummaries in summaries.items():
+        probabilities[classValue] = 1
+        for i in range(len(classSummaries)):
+            mean_, stdev_ = classSummaries[i]
+            x = inputVector[i]
+            probabilities[classValue] *= calculateProbability(x, mean_, stdev_)
+    return probabilities
+
+def predict(summaries, inputVector):
+    probabilities = calculateClassProbabilities(summaries, inputVector)
+    bestLabel, bestProb = None, -1
+    for classValue, probability in probabilities.items():
+        if bestLabel is None or probability > bestProb:
+            bestProb = probability
+            bestLabel = classValue
+    return bestLabel
+
+def getPredictions(summaries, testSet):
+    return [predict(summaries, instance) for instance in testSet]
+
+def getAccuracy(testSet, predictions):
+    correct = sum(1 for i in range(len(testSet)) if testSet[i][-1] == predictions[i])
+    return (correct / float(len(testSet))) * 100.0
+
+def main():
+    random.seed(1)
+    splitRatio = 0.67
+    dataset = loadDataset()
+    trainingSet, testSet = splitDataset(dataset, splitRatio)
+    print(f"Split {len(dataset)} rows into train={len(trainingSet)} and test={len(testSet)}")
+    summaries = summarizeByClass(trainingSet)
+    predictions = getPredictions(summaries, testSet)
+    accuracy = getAccuracy(testSet, predictions)
+    print(f"Accuracy of the classifier is: {accuracy:.2f}%")
+
+if __name__ == "__main__":
+    main()
