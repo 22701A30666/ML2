@@ -68,3 +68,77 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+import random
+import math
+
+# Euclidean distance between two points
+def euclidean_distance(p1, p2):
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2)))
+
+# Assign each point to the nearest centroid
+def assign_clusters(data, centroids):
+    clusters = [[] for _ in centroids]
+    for point in data:
+        distances = [euclidean_distance(point, centroid) for centroid in centroids]
+        closest_index = distances.index(min(distances))
+        clusters[closest_index].append(point)
+    return clusters
+
+# Calculate new centroids as the mean of points in each cluster
+def calculate_centroids(clusters):
+    centroids = []
+    for cluster in clusters:
+        if cluster:
+            centroid = [sum(dim) / len(cluster) for dim in zip(*cluster)]
+            centroids.append(centroid)
+        else:
+            centroids.append(random.choice(cluster))  # Avoid empty cluster
+    return centroids
+
+# Check for convergence
+def has_converged(old_centroids, new_centroids, tol=1e-4):
+    for oc, nc in zip(old_centroids, new_centroids):
+        if euclidean_distance(oc, nc) > tol:
+            return False
+    return True
+
+# K-Means main function
+def kmeans(data, k, max_iterations=100):
+    centroids = random.sample(data, k)
+    for _ in range(max_iterations):
+        clusters = assign_clusters(data, centroids)
+        new_centroids = calculate_centroids(clusters)
+        if has_converged(centroids, new_centroids):
+            break
+        centroids = new_centroids
+    return centroids, clusters
+
+# Example dataset and driver
+def main():
+    data = [
+        [1.0, 2.0], [1.5, 1.8], [5.0, 8.0],
+        [8.0, 8.0], [1.0, 0.6], [9.0, 11.0],
+        [8.0, 2.0], [10.0, 2.0], [9.0, 3.0]
+    ]
+    k = 3
+    centroids, clusters = kmeans(data, k)
+
+    for i, cluster in enumerate(clusters):
+        print(f"\nCluster {i+1}:")
+        for point in cluster:
+            print(f"  {point}")
+    print("\nCentroids:")
+    for c in centroids:
+        print(f"  {c}")
+
+if __name__ == "__main__":
+    main()
+
+
+
