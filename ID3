@@ -1,0 +1,42 @@
+def candidate_elimination(examples):
+    def is_consistent(hypothesis, example):
+        return all(h == e or h == '?' for h, e in zip(hypothesis, example))
+
+    S = examples[0][0][:]
+    G = [['?' for _ in range(len(S))]]
+
+    for attributes, label in examples:
+        if label == 'yes':
+            for i in range(len(S)):
+                if S[i] != attributes[i]:
+                    S[i] = '?'
+            G = [g for g in G if is_consistent(g, attributes)]
+        elif label == 'no':
+            new_G = []
+            for g in G:
+                if is_consistent(g, attributes):
+                    for i in range(len(g)):
+                        if g[i] == '?':
+                            if S[i] != attributes[i]:
+                                new_hypothesis = g[:]
+                                new_hypothesis[i] = S[i]
+                                if new_hypothesis not in new_G:
+                                    new_G.append(new_hypothesis)
+                else:
+                    new_G.append(g)
+            G = new_G
+
+    return S, G
+
+
+dataset = [
+    (['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same'], 'yes'),
+    (['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same'], 'yes'),
+    (['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change'], 'no'),
+    (['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change'], 'yes')
+]
+
+S_final, G_final = candidate_elimination(dataset)
+
+print("Final Specific Hypothesis (S):", S_final)
+print("Final General Hypotheses (G):", G_final)
