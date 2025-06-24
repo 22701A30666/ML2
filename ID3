@@ -1,3 +1,87 @@
+import pandas as pd
+import numpy as np
+import math
+
+# Function to calculate entropy
+def entropy(data):
+    labels = data.iloc[:, -1]
+    label_counts = labels.value_counts()
+    entropy = 0
+    for count in label_counts:
+        probability = count / len(labels)
+        entropy -= probability * math.log2(probability)
+    return entropy
+
+# Function to calculate information gain
+def information_gain(data, split_attr):
+    total_entropy = entropy(data)
+    values = data[split_attr].unique()
+    weighted_entropy = 0
+    for val in values:
+        subset = data[data[split_attr] == val]
+        weight = len(subset) / len(data)
+        weighted_entropy += weight * entropy(subset)
+    gain = total_entropy - weighted_entropy
+    return gain
+
+# ID3 recursive function
+def id3(data, features):
+    labels = data.iloc[:, -1]
+    # If all examples have the same label, return that label
+    if len(labels.unique()) == 1:
+        return labels.iloc[0]
+    # If no more features to split on, return majority label
+    if len(features) == 0:
+        return labels.mode()[0]
+    
+    # Select the best feature based on information gain
+    gains = [information_gain(data, feature) for feature in features]
+    best_feature = features[np.argmax(gains)]
+    
+    tree = {best_feature: {}}
+    for value in data[best_feature].unique():
+        sub_data = data[data[best_feature] == value].drop(columns=[best_feature])
+        subtree = id3(sub_data, [feat for feat in features if feat != best_feature])
+        tree[best_feature][value] = subtree
+    
+    return tree
+
+# Example dataset (Play Tennis)
+data = {
+    'Outlook': ['Sunny', 'Sunny', 'Overcast', 'Rain', 'Rain', 'Rain', 'Overcast',
+                'Sunny', 'Sunny', 'Rain', 'Sunny', 'Overcast', 'Overcast', 'Rain'],
+    'Temperature': ['Hot', 'Hot', 'Hot', 'Mild', 'Cool', 'Cool', 'Cool',
+                    'Mild', 'Cool', 'Mild', 'Mild', 'Mild', 'Hot', 'Mild'],
+    'Humidity': ['High', 'High', 'High', 'High', 'Normal', 'Normal', 'Normal',
+                 'High', 'Normal', 'Normal', 'Normal', 'High', 'Normal', 'High'],
+    'Wind': ['Weak', 'Strong', 'Weak', 'Weak', 'Weak', 'Strong', 'Strong',
+             'Weak', 'Weak', 'Weak', 'Strong', 'Strong', 'Weak', 'Strong'],
+    'PlayTennis': ['No', 'No', 'Yes', 'Yes', 'Yes', 'No', 'Yes',
+                   'No', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes', 'No']
+}
+
+df = pd.DataFrame(data)
+features = list(df.columns[:-1])
+
+# Build the decision tree
+tree = id3(df, features)
+
+# Print the tree
+import pprint
+pprint.pprint(tree)
+
+
+
+
+
+
+
+
+
+
+
+#candidate elimination algorithm
+
 def candidate_elimination(examples):
     def is_consistent(hypothesis, example):
         return all(h == e or h == '?' for h, e in zip(hypothesis, example))
