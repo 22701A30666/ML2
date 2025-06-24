@@ -1,0 +1,71 @@
+import math
+import random
+
+# Calculate Euclidean distance between two vectors
+def euclideanDistance(instance1, instance2):
+    distance = 0.0
+    for i in range(len(instance1) - 1):
+        distance += (instance1[i] - instance2[i]) ** 2
+    return math.sqrt(distance)
+
+# Get K nearest neighbors
+def getNeighbors(trainingSet, testInstance, k):
+    distances = []
+    for trainInstance in trainingSet:
+        dist = euclideanDistance(testInstance, trainInstance)
+        distances.append((trainInstance, dist))
+    distances.sort(key=lambda x: x[1])
+    neighbors = [distances[i][0] for i in range(k)]
+    return neighbors
+
+# Get the most common class among neighbors
+def getResponse(neighbors):
+    classVotes = {}
+    for neighbor in neighbors:
+        response = neighbor[-1]
+        classVotes[response] = classVotes.get(response, 0) + 1
+    sortedVotes = sorted(classVotes.items(), key=lambda x: x[1], reverse=True)
+    return sortedVotes[0][0]
+
+# Get accuracy
+def getAccuracy(testSet, predictions):
+    correct = 0
+    for i in range(len(testSet)):
+        if testSet[i][-1] == predictions[i]:
+            correct += 1
+    return (correct / float(len(testSet))) * 100.0
+
+# Main driver
+def main():
+    dataset = [
+        [2.7810836, 2.550537003, 0],
+        [1.465489372, 2.362125076, 0],
+        [3.396561688, 4.400293529, 0],
+        [1.38807019, 1.850220317, 0],
+        [3.06407232, 3.005305973, 0],
+        [7.627531214, 2.759262235, 1],
+        [5.332441248, 2.088626775, 1],
+        [6.922596716, 1.77106367, 1],
+        [8.675418651, -0.242068655, 1],
+        [7.673756466, 3.508563011, 1]
+    ]
+
+    split = 0.67
+    random.seed(1)
+    trainSize = int(len(dataset) * split)
+    trainSet = random.sample(dataset, trainSize)
+    testSet = [x for x in dataset if x not in trainSet]
+
+    k = 3
+    predictions = []
+    for testInstance in testSet:
+        neighbors = getNeighbors(trainSet, testInstance, k)
+        result = getResponse(neighbors)
+        predictions.append(result)
+        print(f"Predicted={result}, Actual={testInstance[-1]}")
+    
+    accuracy = getAccuracy(testSet, predictions)
+    print(f"Accuracy: {accuracy:.2f}%")
+
+if __name__ == '__main__':
+    main()
